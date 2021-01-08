@@ -143,7 +143,10 @@ export async function imageOptimizer(
       const contentType = getContentType(extension)
       const fsPath = join(hashDir, file)
       if (now < expireAt) {
-        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
+        res.setHeader(
+          'Cache-Control',
+          `public, max-age=${expireAt - now}, immutable`
+        )
         if (sendEtagResponse(req, res, etag)) {
           return { finished: true }
         }
@@ -223,7 +226,7 @@ export async function imageOptimizer(
     const animate =
       ANIMATABLE_TYPES.includes(upstreamType) && isAnimated(upstreamBuffer)
     if (vector || animate) {
-      sendResponse(req, res, upstreamType, upstreamBuffer)
+      sendResponse(req, res, upstreamType, upstreamBuffer, maxAge)
       return { finished: true }
     }
   }
@@ -247,7 +250,7 @@ export async function imageOptimizer(
       if (error.code === 'MODULE_NOT_FOUND') {
         error.message += '\n\nLearn more: https://err.sh/next.js/install-sharp'
         server.logError(error)
-        sendResponse(req, res, upstreamType, upstreamBuffer)
+        sendResponse(req, res, upstreamType, upstreamBuffer, maxAge)
         return { finished: true }
       }
       throw error
@@ -281,9 +284,9 @@ export async function imageOptimizer(
     const etag = getHash([optimizedBuffer])
     const filename = join(hashDir, `${expireAt}.${etag}.${extension}`)
     await promises.writeFile(filename, optimizedBuffer)
-    sendResponse(req, res, contentType, optimizedBuffer)
+    sendResponse(req, res, contentType, optimizedBuffer, maxAge)
   } catch (error) {
-    sendResponse(req, res, upstreamType, upstreamBuffer)
+    sendResponse(req, res, upstreamType, upstreamBuffer, maxAge)
   }
 
   return { finished: true }
@@ -293,10 +296,11 @@ function sendResponse(
   req: IncomingMessage,
   res: ServerResponse,
   contentType: string | null,
-  buffer: Buffer
+  buffer: Buffer,
+  maxAge: number
 ) {
   const etag = getHash([buffer])
-  res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
+  res.setHeader('Cache-Control', `public, max-age=${maxAge}, immutable`)
   if (sendEtagResponse(req, res, etag)) {
     return
   }
