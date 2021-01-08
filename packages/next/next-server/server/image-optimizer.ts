@@ -145,7 +145,9 @@ export async function imageOptimizer(
       if (now < expireAt) {
         res.setHeader(
           'Cache-Control',
-          `public, max-age=${expireAt - now}, immutable`
+          process.env.NODE_ENV === 'production'
+            ? `public, max-age=${expireAt - now}, immutable`
+            : 'public, max-age=0, must-revalidate'
         )
         if (sendEtagResponse(req, res, etag)) {
           return { finished: true }
@@ -300,7 +302,12 @@ function sendResponse(
   maxAge: number
 ) {
   const etag = getHash([buffer])
-  res.setHeader('Cache-Control', `public, max-age=${maxAge}, immutable`)
+  res.setHeader(
+    'Cache-Control',
+    process.env.NODE_ENV === 'production'
+      ? `public, max-age=${maxAge}, immutable`
+      : 'public, max-age=0, must-revalidate'
+  )
   if (sendEtagResponse(req, res, etag)) {
     return
   }
