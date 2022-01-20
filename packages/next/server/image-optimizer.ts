@@ -78,8 +78,8 @@ export async function imageOptimizer(
   }
 
   const { headers } = req
-  const { url, w, q } = parsedUrl.query
-  const mimeType = getSupportedMimeType(formats, headers.accept)
+  const { url, w, q, f } = parsedUrl.query
+  const mimeType = f ? `image/${f}` : getSupportedMimeType(formats, headers.accept)
   let href: string
 
   if (!url) {
