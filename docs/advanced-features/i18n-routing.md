@@ -170,6 +170,11 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const PUBLIC_FILE = /\.(.*)$/
 
+const stripDefaultLocale = (str: string): string => {
+  const stripped = str.replace('/default', '')
+  return stripped
+}
+
 export function middleware(request: NextRequest) {
   const shouldHandleLocale =
     !PUBLIC_FILE.test(request.nextUrl.pathname) &&
@@ -177,7 +182,11 @@ export function middleware(request: NextRequest) {
     request.nextUrl.locale === 'default'
 
   return shouldHandleLocale
-    ? NextResponse.redirect(`/en${request.nextUrl.href}`)
+    ? NextResponse.redirect(
+        `/en${stripDefaultLocale(request.nextUrl.pathname)}${
+          request.nextUrl.search
+        }`
+      )
     : undefined
 }
 ```
@@ -313,7 +322,7 @@ For [Automatically Statically Optimized](/docs/advanced-features/automatic-stati
 
 For example, if you have 50 locales configured with 10 non-dynamic pages using `getStaticProps`, this means `getStaticProps` will be called 500 times. 50 versions of the 10 pages will be generated during each build.
 
-To decrease the build time of dynamic pages with `getStaticProps`, use a [`fallback` mode](https://nextjs.org/docs/basic-features/data-fetching#fallback-true). This allows you to return only the most popular paths and locales from `getStaticPaths` for prerendering during the build. Then, Next.js will build the remaining pages at runtime as they are requested.
+To decrease the build time of dynamic pages with `getStaticProps`, use a [`fallback` mode](/docs/api-reference/data-fetching/get-static-paths#fallback-true). This allows you to return only the most popular paths and locales from `getStaticPaths` for prerendering during the build. Then, Next.js will build the remaining pages at runtime as they are requested.
 
 ### Automatically Statically Optimized Pages
 
